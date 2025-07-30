@@ -1,0 +1,22 @@
+{
+  "search_title": "Rune Search",
+  "rune_detail_title": "Rune Detail",
+  "welcome_title": "Welcome to Mysterious Library!",
+  "choose_category": "Choose a category to explore:",
+  "runes_category": "Runes",
+  "tarot_category": "Tarot",
+  "oracle_category": "Oracle",
+  "tarot_search_title": "Tarot Card Search",       
+  "search_tarot_placeholder": "Search Tarot cards...",
+  "search_placeholder": "Search runes...",
+  "no_runes_found": "No runes found.",
+  "info_box_text": "SearchRunesApp helps you search and learn more about runes and their meanings. So you can either click on the rune you want to know more about or use the search function.",
+  "meaning_title": "Meaning:",
+  "interpretation_title": "Interpretation:",
+  "tarot_detail_title": "Tarot Card Details",      
+  "meaning_upright": "Upright Meaning:",           
+  "meaning_reversed": "Reversed Meaning:",         
+  "interpretation_upright": "Upright Interpretation:",
+  "interpretation_reversed": "Reversed Interpretation:",
+  "tarot_not_found": "Tarot card not found."       
+}

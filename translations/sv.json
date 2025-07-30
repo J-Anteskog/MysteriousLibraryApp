@@ -1,0 +1,22 @@
+{
+  "welcome_title": "Välkommen till Mystiska Biblioteket!",
+  "choose_category": "Välj en kategori att utforska:",
+  "runes_category": "Runor",
+  "tarot_category": "Tarot",
+  "oracle_category": "Orakel",
+  "tarot_search_title": "Tarotkortsökning",
+  "search_tarot_placeholder": "Sök tarotkort...",
+  "search_title": "Runors Sökning",
+  "rune_detail_title": "Run Detalj",
+  "search_placeholder": "Sök runor...",
+  "no_runes_found": "Inga runor hittades.",
+  "info_box_text": "SökRunorApp hjälper dig att söka och lära dig mer om runor och deras betydelser. Du kan antingen klicka på runan du vill veta mer om eller använda sökfunktionen.",
+  "meaning_title": "Betydelse:",
+  "interpretation_title": "Tolkning:",
+  "tarot_detail_title": "Tarotkortsdetaljer",     
+  "meaning_upright": "Betydelse upprätt:",        
+  "meaning_reversed": "Betydelse omvänt:",        
+  "interpretation_upright": "Tolkning upprätt:",  
+  "interpretation_reversed": "Tolkning omvänt:",  
+  "tarot_not_found": "Tarotkort ej hittat."       
+}
