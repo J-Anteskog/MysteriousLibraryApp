@@ -1,10 +1,21 @@
-import { Image, ScrollView, StyleSheet, Text } from 'react-native';
-// Importera även getCurrentLocale från din i18n-fil
-import { getCurrentLocale, translate } from '../utils/i18n';
+import React, { useState, useEffect } from 'react';
+import { View, ScrollView, StyleSheet, Text } from 'react-native';
+import { Image } from 'expo-image';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { addLocaleListener, getCurrentLocale, translate } from '../utils/i18n';
+import { useRoute } from '@react-navigation/native';
 
-export default function RuneDetailScreen ({ route }) {
+export default function RuneDetailScreen({ route }) {
   const { rune } = route.params;
-  // Hämta den aktuella språkkoden från din i18n-instans
+
+  const [locale, setLocale] = useState(getCurrentLocale());
+  useEffect(() => {
+    const unsubscribe = addLocaleListener(() => {
+      setLocale(getCurrentLocale());
+    });
+    return () => unsubscribe();
+  }, []);
+
   const currentLocale = getCurrentLocale();
 
   return (
@@ -12,17 +23,15 @@ export default function RuneDetailScreen ({ route }) {
       <Text style={styles.title}>
         {rune.name}
       </Text>
+
+      <LanguageSwitcher />
       <Image source={rune.image} style={styles.image} resizeMode='contain' />
       <Text style={styles.meaningTitle}>{translate('meaning_title')}</Text>
       <Text style={styles.meaningText}>
-        {/* Använd den aktuella språkkoden för att hämta rätt betydelse.
-            Om översättningen för det aktuella språket saknas, fallbackerar vi till engelska (rune.meaning.en).
-            Det är viktigt att varje runobjekt har en 'en' version. */}
         {rune.meaning[currentLocale] || rune.meaning.en}
       </Text>
       <Text style={styles.interpretationTitle}>{translate('interpretation_title')}</Text>
       <Text style={styles.interpretation}>
-        {/* Gör samma sak för tolkningen */}
         {rune.interpretation[currentLocale] || rune.interpretation.en}
       </Text>
     </ScrollView>
@@ -33,17 +42,17 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     alignItems: 'center',
-    backgroundColor: '#1a1a2e' // Mörkblå-lila
+    backgroundColor: '#1a1a2e'
   },
   title: {
     fontSize: 28,
     fontFamily: 'CinzelDecorative',
-    color: '#e0c097', // Guldaktig
+    color: '#e0c097',
     marginBottom: 20
   },
   meaningTitle: {
     fontSize: 18,
-    color: '#e0c097', // Ljusare färg
+    color: '#e0c097',
     marginTop: 20,
     marginBottom: 8,
     fontWeight: 'bold',

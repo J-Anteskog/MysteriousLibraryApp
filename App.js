@@ -3,21 +3,69 @@ import { createStackNavigator } from '@react-navigation/stack';
 import * as Font from 'expo-font';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+
+// Nya importer för autentiseringspersistence
+import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import { onAuthStateChanged } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+
+// Importera alla skärmkomponenter
 import HomeScreen from './screens/HomeScreen';
 import TarotSearchScreen from './screens/TarotSearchScreen';
 import TarotDetailScreen from './screens/TarotDetailScreen';
-
-// Importera translate, getCurrentLocale och den nya addLocaleListener
-import { addLocaleListener, getCurrentLocale, translate } from './utils/i18n';
-
 import RuneDetailScreen from './screens/RuneDetailScreen';
 import SearchScreen from './screens/SearchScreen';
+import LoginScreen from './screens/LoginScreen';
+import WelcomeScreen from './screens/WelcomeScreen';
+
+// Importera språkhanteringsfunktioner
+import { addLocaleListener, getCurrentLocale, translate } from './utils/i18n';
+
+// Ersätt dessa med din faktiska Firebase-konfiguration
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID
+};
+const app = initializeApp(firebaseConfig);
+
+// Ändrade till den nya metoden för att initiera auth med persistence
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
 
 const Stack = createStackNavigator();
 
+const AuthFlowStack = () => {
+  const AuthStack = createStackNavigator();
+  return (
+    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+      <AuthStack.Screen name="Login" component={LoginScreen} />
+    </AuthStack.Navigator>
+  );
+};
+
+const MainStack = () => {
+  const MainStack = createStackNavigator();
+  return (
+    <MainStack.Navigator screenOptions={{ headerShown: false }}>
+      <MainStack.Screen name="Home" component={HomeScreen} />
+      <MainStack.Screen name="Search" component={SearchScreen} options={{ title: translate('search_title') }} />
+      <MainStack.Screen name="RuneDetail" component={RuneDetailScreen} options={{ title: translate('rune_detail_title') }} />
+      <MainStack.Screen name="TarotSearch" component={TarotSearchScreen} options={{ title: translate('tarot_search_title') }} />
+      <MainStack.Screen name="TarotDetail" component={TarotDetailScreen} options={{ title: translate('tarot_detail_title') }} />
+    </MainStack.Navigator>
+  );
+};
+
 export default function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
-  const [currentAppLocale, setCurrentAppLocale] = useState(getCurrentLocale()); // State för att tvinga omrenderering
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     async function loadFonts() {
@@ -29,17 +77,17 @@ export default function App() {
     loadFonts();
   }, []);
 
-  // Prenumerera på språkändringar
   useEffect(() => {
-    const unsubscribe = addLocaleListener(() => {
-      setCurrentAppLocale(getCurrentLocale()); // Uppdatera state för att trigga re-render
+    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
+      setUser(authUser);
+      if (initializing) {
+        setInitializing(false);
+      }
     });
-
-    // Cleanup-funktion för att sluta prenumerera när komponenten avmonteras
     return () => unsubscribe();
-  }, []); // Tom beroende-array så den körs bara en gång vid mount
+  }, [initializing]);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || initializing) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
@@ -48,36 +96,19 @@ export default function App() {
   }
 
   return (
-    // Använd currentAppLocale som en 'key' för att tvinga NavigationContainer
-    // och dess barn att laddas om när språket ändras.
-    <NavigationContainer key={currentAppLocale}>
-<Stack.Navigator initialRouteName="Home">
-  <Stack.Screen
-    name="Home"
-    component={HomeScreen}
-    options={{ headerShown: false }}
-  />
-  <Stack.Screen
-    name="Search"
-    component={SearchScreen}
-    options={{ title: translate('search_title') }}
-  />
-  <Stack.Screen
-    name="RuneDetail"
-    component={RuneDetailScreen}
-    options={{ title: translate('rune_detail_title') }}
-  />
-  <Stack.Screen
-  name="TarotDetail" // Detta är namnet som TarotSearchScreen navigerar till
-  component={TarotDetailScreen}
-  options={{ title: translate('tarot_detail_title') }} // Ny översättningsnyckel
-/>
-  <Stack.Screen
-  name="TarotSearch"
-  component={TarotSearchScreen}
-  options={{ title: translate('tarot_search_title') }} // Ny översättningsnyckel
-/>
-</Stack.Navigator>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {user ? (
+          <>
+            <Stack.Screen name="Main" component={MainStack} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="AuthFlow" component={AuthFlowStack} />
+          </>
+        )}
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }

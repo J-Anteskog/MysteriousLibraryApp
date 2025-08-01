@@ -1,27 +1,30 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import runes from '../data/runes';
-import { setLocale, translate } from '../utils/i18n'; // Importera setLocale härifrån
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { addLocaleListener, getCurrentLocale, translate } from '../utils/i18n';
 
 export default function SearchScreen({ navigation }) {
   const [query, setQuery] = useState('');
 
+  const [locale, setLocale] = useState(getCurrentLocale());
+  useEffect(() => {
+    const unsubscribe = addLocaleListener(() => {
+      setLocale(getCurrentLocale());
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const currentLocale = getCurrentLocale();
   const filteredRunes = runes.filter(rune =>
-    rune.name.toLowerCase().includes(query.toLowerCase())
+    rune.name.toLowerCase().includes(query.toLowerCase()) ||
+    rune.meaning[currentLocale].upright.toLowerCase().includes(query.toLowerCase()) ||
+    rune.meaning[currentLocale].reversed.toLowerCase().includes(query.toLowerCase())
   );
 
   return (
     <View style={styles.container}>
-      {/* Lägg till knappar för språkval */}
-      <View style={styles.languageButtonsContainer}>
-        <TouchableOpacity style={styles.languageButton} onPress={() => setLocale('en')}>
-          <Text style={styles.languageButtonText}>English</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.languageButton} onPress={() => setLocale('sv')}>
-          <Text style={styles.languageButtonText}>Svenska</Text>
-        </TouchableOpacity>
-      </View>
-
+      <LanguageSwitcher />
       <View style={styles.infoBox}>
         <Text style={styles.infoText}>
           {translate('info_box_text')}
@@ -54,7 +57,7 @@ export default function SearchScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    flatListStyle: {
+  flatListStyle: {
     flex: 1,
   },
   container: {
@@ -109,23 +112,5 @@ const styles = StyleSheet.create({
     color: '#e0c097',
     fontSize: 15,
     textAlign: 'center',
-  },
-  // Nya stilar för språkvalsknapparna
-  languageButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    // Lägg till lite marginal om du vill
-    marginBottom: 15,
-  },
-  languageButton: {
-    backgroundColor: '#3a3a5e', // En mörkare bakgrund för knapparna
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 5,
-    marginHorizontal: 5, // Lite utrymme mellan knapparna
-  },
-  languageButtonText: {
-    color: '#e0c097', // Samma guldaktiga färg som övrig text
-    fontSize: 16,
   },
 });
