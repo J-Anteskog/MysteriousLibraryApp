@@ -32,7 +32,7 @@ export default function WelcomeScreen({ navigation }) {
     };
 
     const navigateAsGuest = () => {
-        navigation.navigate('Home');
+        navigation.navigate('Main');
     };
 
     return (
