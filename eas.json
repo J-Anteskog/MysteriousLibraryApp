@@ -23,7 +23,11 @@
       "android": {
         "buildType": "apk"
       },
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "SUPABASE_URL": "$SUPABASE_URL",
+        "SUPABASE_ANON_KEY": "$SUPABASE_ANON_KEY"
+      }
     }
   },
   "submit": {
