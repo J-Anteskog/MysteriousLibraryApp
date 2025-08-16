@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { translate, getCurrentLocale, setLocale } from '../utils/i18n';
+import { supabase } from '../supabaseClient'; // Importera Supabase-klienten
 
 // Skapar en enkel komponent för att byta språk
 const LanguageSwitcher = () => {
@@ -31,8 +32,13 @@ export default function WelcomeScreen({ navigation }) {
         navigation.navigate('AuthFlow', { screen: 'Login' });
     };
 
-    const navigateAsGuest = () => {
-        navigation.navigate('Main');
+    // Ny funktion för att logga in som gäst
+    const navigateAsGuest = async () => {
+        const { error } = await supabase.auth.signInAnonymously();
+        if (error) {
+            console.error('Anonym inloggning misslyckades:', error.message);
+        }
+        // Ingen navigering behövs här, då App.js hanterar detta automatiskt.
     };
 
     return (

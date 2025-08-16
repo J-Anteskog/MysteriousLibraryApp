@@ -5,13 +5,10 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import * as Font from 'expo-font';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Ladda ner ikoner
+import { Ionicons } from '@expo/vector-icons';
 
-// Nya importer för autentiseringspersistence
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-import { onAuthStateChanged } from 'firebase/auth';
-import { initializeApp } from 'firebase/app';
+// Importera den nya Supabase-klienten
+import { supabase } from './supabaseClient';
 
 // Importera alla skärmkomponenter
 import HomeScreen from './screens/HomeScreen';
@@ -21,36 +18,12 @@ import RuneDetailScreen from './screens/RuneDetailScreen';
 import SearchScreen from './screens/SearchScreen';
 import LoginScreen from './screens/LoginScreen';
 import WelcomeScreen from './screens/WelcomeScreen';
-import ProfileScreen from './screens/ProfileScreen'; // Importera den nya skärmen
+import ProfileScreen from './screens/ProfileScreen';
 
 // Importera språkhanteringsfunktioner
 import { addLocaleListener, getCurrentLocale, translate } from './utils/i18n';
 
-// Ersätt dessa med din faktiska Firebase-konfiguration
-import {
-  FIREBASE_API_KEY,
-  FIREBASE_AUTH_DOMAIN,
-  FIREBASE_PROJECT_ID,
-  FIREBASE_STORAGE_BUCKET,
-  FIREBASE_MESSAGING_SENDER_ID,
-  FIREBASE_APP_ID
-} from "@env";
-
-const firebaseConfig = {
-  apiKey: FIREBASE_API_KEY,
-  authDomain: FIREBASE_AUTH_DOMAIN,
-  projectId: FIREBASE_PROJECT_ID,
-  storageBucket: FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
-  appId: FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-
-// Ändrade till den nya metoden för att initiera auth med persistence
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-});
+// All Firebase-relaterad kod har tagits bort härifrån
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -125,13 +98,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-      setUser(authUser);
+    // Supabase har en annan metod för att lyssna på autentisering
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
       if (initializing) {
         setInitializing(false);
       }
     });
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, [initializing]);
 
   if (!fontsLoaded || initializing) {

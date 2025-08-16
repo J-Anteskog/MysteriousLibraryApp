@@ -1,30 +1,35 @@
 // screens/ProfileScreen.js
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { signOut } from 'firebase/auth'; 
-import { useNavigation } from '@react-navigation/native';
-import { auth } from '../App'; // <-- Importera auth-instansen korrekt härifrån
+
+// Importera Supabase-klienten direkt
+import { supabase } from '../supabaseClient'; 
 
 export default function ProfileScreen() {
-    const navigation = useNavigation();
+    // Vi behöver inte useNavigation() eller navigation-objektet för utloggning
+    // eftersom App.js hanterar navigeringen automatiskt via onAuthStateChange.
 
     const handleLogout = async () => {
         try {
-            await signOut(auth);
-            // Ingen navigering behövs här, då onAuthStateChanged i App.js
-            // kommer att upptäcka utloggningen och navigera automatiskt.
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                throw error;
+            }
         } catch (error) {
             Alert.alert("Utloggningsfel", error.message);
         }
     };
 
+    // Supabase lagrar den inloggade användaren i session-objektet
+    const user = supabase.auth.session()?.user;
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Min Profil</Text>
-            {auth.currentUser && (
+            {user && (
                 <View>
                     <Text style={styles.emailText}>Inloggad som:</Text>
-                    <Text style={styles.emailText}>{auth.currentUser.email}</Text>
+                    <Text style={styles.emailText}>{user.email}</Text>
                 </View>
             )}
             

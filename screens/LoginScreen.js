@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
-import { auth } from '../App'; // <-- Importera 'auth' instansen härifrån
+// Importera den nya Supabase-klienten
+import { supabase } from '../supabaseClient';
 
 export default function LoginScreen({ navigation }) {
     const [email, setEmail] = useState('');
@@ -13,7 +13,14 @@ export default function LoginScreen({ navigation }) {
     const handleLogin = async () => {
         setLoading(true);
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            // Använd Supabase-metoden för inloggning
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+            if (error) {
+                throw error;
+            }
         } catch (error) {
             Alert.alert('Inloggningsfel', error.message);
         } finally {
@@ -24,7 +31,20 @@ export default function LoginScreen({ navigation }) {
     const handleSignUp = async () => {
         setLoading(true);
         try {
-            await createUserWithEmailAndPassword(auth, email, password);
+            // Använd Supabase-metoden för registrering
+            const { error } = await supabase.auth.signUp({
+                email,
+                password,
+            });
+            if (error) {
+                throw error;
+            }
+            // Supabase skickar en verifieringslänk till e-postadressen.
+            // Du kan informera användaren om detta.
+            Alert.alert(
+                'Verifiera din e-post',
+                'Ett verifieringsmeddelande har skickats till din e-postadress. Vänligen klicka på länken för att bekräfta din registrering.'
+            );
         } catch (error) {
             Alert.alert('Registreringsfel', error.message);
         } finally {
@@ -33,8 +53,6 @@ export default function LoginScreen({ navigation }) {
     };
 
     return (
-        // ... (resten av LoginScreen.js-koden är oförändrad)
-        // ...
         <View style={styles.container}>
             <Text style={styles.title}>
                 {isLogin ? 'Logga in' : 'Registrera dig'}
