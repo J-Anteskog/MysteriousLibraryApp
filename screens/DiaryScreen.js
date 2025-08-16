@@ -1,9 +1,11 @@
 // screens/DiaryScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
-import { db, storage, auth } from '../App'; // Importera din Firebase-konfiguration
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
+// Importera Supabase-klienten från din konfigurationsfil
+import { supabase } from '../supabaseClient';
+
+// Importera expo-image-picker (som du redan har)
 import * as ImagePicker from 'expo-image-picker';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,25 +15,55 @@ export default function DiaryScreen() {
     const [newEntry, setNewEntry] = useState('');
     const [imageUri, setImageUri] = useState(null);
     const [loading, setLoading] = useState(false);
-    const userId = auth.currentUser.uid;
+    const [user, setUser] = useState(null);
 
-    // Lyssnar på uppdateringar från Firestore i realtid
+    // Hämta användaren från Supabase-sessionen
     useEffect(() => {
-        const q = query(
-            collection(db, `users/${userId}/diaryEntries`),
-            orderBy('createdAt', 'desc')
-        );
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            setUser(user);
+        };
+        fetchUser();
+    }, []);
 
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const entries = [];
-            querySnapshot.forEach((doc) => {
-                entries.push({ id: doc.id, ...doc.data() });
-            });
-            setDiaryEntries(entries);
-        });
+    // Lyssnar på uppdateringar från Supabase i realtid
+    useEffect(() => {
+        if (!user) return;
 
-        return () => unsubscribe();
-    }, [userId]);
+        const subscription = supabase
+            .from('diary_entries')
+            .on('INSERT', payload => {
+                setDiaryEntries(currentEntries => [payload.new, ...currentEntries]);
+            })
+            .on('DELETE', payload => {
+                setDiaryEntries(currentEntries => currentEntries.filter(entry => entry.id !== payload.old.id));
+            })
+            .subscribe();
+
+        return () => supabase.removeSubscription(subscription);
+    }, [user]);
+
+    // Hämta befintliga dagboksinlägg från Supabase
+    useEffect(() => {
+        if (!user) return;
+
+        const fetchEntries = async () => {
+            const { data: entries, error } = await supabase
+                .from('diary_entries')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Kunde inte ladda inlägg:', error.message);
+                Alert.alert('Fel', 'Kunde inte ladda dagboksinlägg.');
+            } else {
+                setDiaryEntries(entries);
+            }
+        };
+
+        fetchEntries();
+    }, [user]);
 
     // Funktion för att välja en bild från galleriet
     const pickImage = async () => {
@@ -47,17 +79,31 @@ export default function DiaryScreen() {
         }
     };
 
-    // Funktion för att ladda upp bilden till Firebase Storage
+    // Funktion för att ladda upp bilden till Supabase Storage
     const uploadImage = async (uri) => {
+        const fileExt = uri.split('.').pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+        
         const response = await fetch(uri);
         const blob = await response.blob();
-        const filename = `${uuidv4()}.jpg`;
-        const storageRef = ref(storage, `images/${userId}/${filename}`);
-        await uploadBytes(storageRef, blob);
-        return await getDownloadURL(storageRef);
+        
+        const { error: uploadError } = await supabase.storage
+            .from('diary_images')
+            .upload(filePath, blob, {
+                cacheControl: '3600',
+                upsert: false
+            });
+
+        if (uploadError) {
+            throw new Error(uploadError.message);
+        }
+        
+        const { data } = supabase.storage.from('diary_images').getPublicUrl(filePath);
+        return data.publicUrl;
     };
 
-    // Funktion för att spara inlägget i Firestore
+    // Funktion för att spara inlägget i Supabase
     const saveEntry = async () => {
         if (newEntry.trim() === '') {
             Alert.alert("Fel", "Dagboksinlägget kan inte vara tomt.");
@@ -72,11 +118,19 @@ export default function DiaryScreen() {
                 imageUrl = await uploadImage(imageUri);
             }
 
-            await addDoc(collection(db, `users/${userId}/diaryEntries`), {
-                text: newEntry,
-                imageUrl: imageUrl,
-                createdAt: serverTimestamp(),
-            });
+            const { error: insertError } = await supabase
+                .from('diary_entries')
+                .insert([
+                    {
+                        text: newEntry,
+                        image_url: imageUrl,
+                        user_id: user.id
+                    }
+                ]);
+
+            if (insertError) {
+                throw new Error(insertError.message);
+            }
 
             setNewEntry('');
             setImageUri(null);
@@ -90,11 +144,11 @@ export default function DiaryScreen() {
     const renderItem = ({ item }) => (
         <View style={styles.entryContainer}>
             <Text style={styles.entryText}>{item.text}</Text>
-            {item.imageUrl && (
-                <Image source={{ uri: item.imageUrl }} style={styles.entryImage} />
+            {item.image_url && (
+                <Image source={{ uri: item.image_url }} style={styles.entryImage} />
             )}
             <Text style={styles.timestamp}>
-                {item.createdAt ? new Date(item.createdAt.toDate()).toLocaleString() : 'Saving...'}
+                {item.created_at ? new Date(item.created_at).toLocaleString() : 'Saving...'}
             </Text>
         </View>
     );
@@ -102,6 +156,8 @@ export default function DiaryScreen() {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Min Dagbok</Text>
+            
+            {loading && <ActivityIndicator size="large" color="#e0c097" />}
 
             <View style={styles.inputContainer}>
                 <TextInput
@@ -120,11 +176,7 @@ export default function DiaryScreen() {
                         <Text style={styles.buttonText}>Välj Bild</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.saveButton} onPress={saveEntry} disabled={loading}>
-                        {loading ? (
-                            <ActivityIndicator color="#1a1a2e" />
-                        ) : (
-                            <Text style={styles.buttonText}>Spara inlägg</Text>
-                        )}
+                        <Text style={styles.buttonText}>Spara inlägg</Text>
                     </TouchableOpacity>
                 </View>
             </View>
