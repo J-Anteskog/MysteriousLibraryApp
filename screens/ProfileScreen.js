@@ -1,5 +1,5 @@
 // screens/ProfileScreen.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 
 // Importera Supabase-klienten direkt
@@ -20,8 +20,16 @@ export default function ProfileScreen() {
         }
     };
 
-    // Supabase lagrar den inloggade användaren i session-objektet
-    const user = supabase.auth.session()?.user;
+
+    // Hämta användaren enligt Supabase v2 API
+    const [user, setUser] = useState(null);
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            setUser(user);
+        };
+        fetchUser();
+    }, []);
 
     return (
         <View style={styles.container}>
