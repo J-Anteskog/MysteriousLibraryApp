@@ -6,29 +6,18 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "env": {
+        "SUPABASE_URL": "$SUPABASE_URL",
+        "SUPABASE_ANON_KEY": "$SUPABASE_ANON_KEY"
+      },
       "android": {
         "buildType": "apk"
       }
     },
     "preview": {
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
+      "extends": "development"
     },
-    "production": {
-      "distribution": "store"
-    },
-    "testApk": {
-      "android": {
-        "buildType": "apk"
-      },
-      "distribution": "internal",
-      "env": {
-        "SUPABASE_URL": "$SUPABASE_URL",
-        "SUPABASE_ANON_KEY": "$SUPABASE_ANON_KEY"
-      }
-    }
+    "production": {}
   },
   "submit": {
     "production": {}
