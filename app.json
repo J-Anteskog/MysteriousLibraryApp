@@ -30,11 +30,13 @@
 	"web": {
 	  "favicon": "./assets/favicon.png"
 	},
-	"extra": {
-	  "eas": {
-		"projectId": "bfd0b6f8-f263-48f6-9031-1d5a15acdc13"
-	  }
-	},
+		"extra": {
+			"eas": {
+				"projectId": "bfd0b6f8-f263-48f6-9031-1d5a15acdc13"
+			},
+			"EXPO_PUBLIC_SUPABASE_URL": "https://vzzcpkyrsexbqidsvero.supabase.co",
+			"EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6emNwa3lyc2V4YnFpZHN2ZXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNTkwMTcsImV4cCI6MjA3MDkzNTAxN30.AsR8Puy0tJPlU3IWu7VlmUi9wJotRL4ezb6tizMpgnA"
+		},
 	"runtimeVersion": {
 	  "policy": "appVersion"
 	},
