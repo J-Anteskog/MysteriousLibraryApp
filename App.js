@@ -19,6 +19,7 @@ import SearchScreen from './screens/SearchScreen';
 import LoginScreen from './screens/LoginScreen';
 import WelcomeScreen from './screens/WelcomeScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import DiaryScreen from './screens/DiaryScreen';
 
 // Importera språkhanteringsfunktioner
 import { addLocaleListener, getCurrentLocale, translate } from './utils/i18n';
@@ -58,13 +59,13 @@ const LoggedInTabs = () => {
         headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-
           if (route.name === 'HomeStack') {
             iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Diary') {
+            iconName = focused ? 'book' : 'book-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           }
-
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#e0c097',
@@ -76,6 +77,7 @@ const LoggedInTabs = () => {
       })}
     >
       <Tab.Screen name="HomeStack" component={MainStack} options={{ title: "Hem" }} />
+      <Tab.Screen name="Diary" component={DiaryScreen} options={{ title: "Dagbok" }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Profil" }} />
     </Tab.Navigator>
   );
