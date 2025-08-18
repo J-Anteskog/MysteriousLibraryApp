@@ -40,5 +40,19 @@
   "meaning_reversed": "Betydelse omvänt:",
   "interpretation_upright": "Tolkning upprätt:",
   "interpretation_reversed": "Tolkning omvänt:",
-  "tarot_not_found": "Tarotkort ej hittat."
+  "tarot_not_found": "Tarotkort ej hittat.",
+  "profile_title": "Profil",
+  "profile_logged_in_as": "Inloggad som:",
+  "profile_name": "Namn",
+  "profile_age": "Ålder",
+  "profile_zodiac": "Stjärntecken",
+  "profile_favorite_category": "Favoritkategori",
+  "profile_select": "Välj...",
+  "profile_tarot": "Tarot",
+  "profile_runes": "Runor",
+  "profile_oracle": "Orakel",
+  "profile_favorite_card_or_rune": "Favoritkort eller runa",
+  "profile_save": "Spara profil",
+  "profile_saving": "Sparar...",
+  "profile_logout": "Logga ut"
 }

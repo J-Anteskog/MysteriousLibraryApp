@@ -26,21 +26,40 @@ export default function DiaryScreen() {
         fetchUser();
     }, []);
 
-    // Lyssnar på uppdateringar från Supabase i realtid
+    // Realtidsuppdateringar med Supabase v2 channel-API
     useEffect(() => {
         if (!user) return;
 
-        const subscription = supabase
-            .from('diary_entries')
-            .on('INSERT', payload => {
-                setDiaryEntries(currentEntries => [payload.new, ...currentEntries]);
-            })
-            .on('DELETE', payload => {
-                setDiaryEntries(currentEntries => currentEntries.filter(entry => entry.id !== payload.old.id));
-            })
+        const channel = supabase.channel('diary_entries_changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'diary_entries',
+                    filter: `user_id=eq.${user.id}`
+                },
+                payload => {
+                    setDiaryEntries(currentEntries => [payload.new, ...currentEntries]);
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'diary_entries',
+                    filter: `user_id=eq.${user.id}`
+                },
+                payload => {
+                    setDiaryEntries(currentEntries => currentEntries.filter(entry => entry.id !== payload.old.id));
+                }
+            )
             .subscribe();
 
-        return () => supabase.removeSubscription(subscription);
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [user]);
 
     // Hämta befintliga dagboksinlägg från Supabase
@@ -118,7 +137,7 @@ export default function DiaryScreen() {
                 imageUrl = await uploadImage(imageUri);
             }
 
-            const { error: insertError } = await supabase
+            const { data, error: insertError } = await supabase
                 .from('diary_entries')
                 .insert([
                     {
@@ -126,10 +145,16 @@ export default function DiaryScreen() {
                         image_url: imageUrl,
                         user_id: user.id
                     }
-                ]);
+                ])
+                .select();
 
             if (insertError) {
                 throw new Error(insertError.message);
+            }
+
+            // Lägg till det nya inlägget direkt i listan
+            if (data && data[0]) {
+                setDiaryEntries(current => [data[0], ...current]);
             }
 
             setNewEntry('');
@@ -141,15 +166,116 @@ export default function DiaryScreen() {
         }
     };
 
+    // Funktion för att uppdatera ett inlägg
+    const updateEntry = async (id, newText) => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('diary_entries')
+                .update({ text: newText })
+                .eq('id', id)
+                .eq('user_id', user.id)
+                .select();
+            if (error) throw new Error(error.message);
+            // Uppdatera listan direkt
+            if (data && data[0]) {
+                setDiaryEntries(current => current.map(entry => entry.id === id ? { ...entry, ...data[0] } : entry));
+            }
+        } catch (e) {
+            Alert.alert('Fel', 'Kunde inte uppdatera inlägget: ' + e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Funktion för att radera ett inlägg
+    const deleteEntry = async (id) => {
+        Alert.alert(
+            'Radera inlägg',
+            'Är du säker på att du vill radera detta inlägg?',
+            [
+                { text: 'Avbryt', style: 'cancel' },
+                {
+                    text: 'Radera', style: 'destructive', onPress: async () => {
+                        setLoading(true);
+                        try {
+                            const { error } = await supabase
+                                .from('diary_entries')
+                                .delete()
+                                .eq('id', id)
+                                .eq('user_id', user.id);
+                            if (error) throw new Error(error.message);
+                            // Ta bort inlägget direkt ur listan
+                            setDiaryEntries(current => current.filter(entry => entry.id !== id));
+                        } catch (e) {
+                            Alert.alert('Fel', 'Kunde inte radera inlägget: ' + e.message);
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    // Redigeringsläge för inlägg
+    const [editingId, setEditingId] = useState(null);
+    const [editingText, setEditingText] = useState('');
+
     const renderItem = ({ item }) => (
         <View style={styles.entryContainer}>
-            <Text style={styles.entryText}>{item.text}</Text>
-            {item.image_url && (
-                <Image source={{ uri: item.image_url }} style={styles.entryImage} />
+            {editingId === item.id ? (
+                <>
+                    <TextInput
+                        style={styles.textInput}
+                        value={editingText}
+                        onChangeText={setEditingText}
+                        multiline
+                    />
+                    <View style={styles.buttonRow}>
+                        <TouchableOpacity
+                            style={styles.imageButton}
+                            onPress={() => { setEditingId(null); setEditingText(''); }}
+                        >
+                            <Text style={styles.buttonText}>Avbryt</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.saveButton}
+                            onPress={async () => {
+                                await updateEntry(item.id, editingText);
+                                setEditingId(null);
+                                setEditingText('');
+                            }}
+                        >
+                            <Text style={styles.buttonText}>Spara</Text>
+                        </TouchableOpacity>
+                    </View>
+                </>
+            ) : (
+                <>
+                    <Text style={styles.entryText}>{item.text}</Text>
+                    {item.image_url && (
+                        <Image source={{ uri: item.image_url }} style={styles.entryImage} />
+                    )}
+                    <Text style={styles.timestamp}>
+                        {item.created_at ? new Date(item.created_at).toLocaleString() : 'Saving...'}
+                    </Text>
+                    <View style={styles.buttonRow}>
+                        <TouchableOpacity
+                            style={styles.imageButton}
+                            onPress={() => { setEditingId(item.id); setEditingText(item.text); }}
+                        >
+                            <Text style={styles.buttonText}>Uppdatera</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.saveButton}
+                            onPress={() => deleteEntry(item.id)}
+                        >
+                            <Text style={styles.buttonText}>Radera</Text>
+                        </TouchableOpacity>
+                    </View>
+                </>
             )}
-            <Text style={styles.timestamp}>
-                {item.created_at ? new Date(item.created_at).toLocaleString() : 'Saving...'}
-            </Text>
         </View>
     );
 

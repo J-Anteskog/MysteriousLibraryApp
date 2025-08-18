@@ -40,5 +40,19 @@
   "choose_category": "Choose a category to explore:",
   "runes_category": "Runes",
   "tarot_category": "Tarot",
-  "oracle_category": "Oracle"
+  "oracle_category": "Oracle",
+  "profile_title": "Profile",
+  "profile_logged_in_as": "Logged in as:",
+  "profile_name": "Name",
+  "profile_age": "Age",
+  "profile_zodiac": "Zodiac sign",
+  "profile_favorite_category": "Favorite category",
+  "profile_select": "Select...",
+  "profile_tarot": "Tarot",
+  "profile_runes": "Runes",
+  "profile_oracle": "Oracle",
+  "profile_favorite_card_or_rune": "Favorite card or rune",
+  "profile_save": "Save profile",
+  "profile_saving": "Saving...",
+  "profile_logout": "Log out"
 }
