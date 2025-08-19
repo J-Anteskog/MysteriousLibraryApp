@@ -19,14 +19,20 @@
 		"ITSAppUsesNonExemptEncryption": false
 	  }
 	},
-	"android": {
-	  "adaptiveIcon": {
-		"foregroundImage": "./assets/adaptive-icon.png",
-		"backgroundColor": "#ffffff"
-	  },
-	  "edgeToEdgeEnabled": true,
-	  "package": "com.anteskogen85.mysteriouslibraryapp"
-	},
+		"android": {
+			"adaptiveIcon": {
+				"foregroundImage": "./assets/adaptive-icon.png",
+				"backgroundColor": "#ffffff"
+			},
+			"edgeToEdgeEnabled": true,
+			"package": "com.anteskogen85.mysteriouslibraryapp",
+			"permissions": [
+				"READ_MEDIA_IMAGES",
+				"READ_MEDIA_VIDEO",
+				"READ_EXTERNAL_STORAGE",
+				"WRITE_EXTERNAL_STORAGE"
+			]
+		},
 	"web": {
 	  "favicon": "./assets/favicon.png"
 	},

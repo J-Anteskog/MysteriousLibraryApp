@@ -86,6 +86,11 @@ export default function DiaryScreen() {
 
     // Funktion för att välja en bild från galleriet
     const pickImage = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Behörighet krävs', 'Du måste ge appen tillgång till bilder för att kunna välja en bild.');
+            return;
+        }
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
