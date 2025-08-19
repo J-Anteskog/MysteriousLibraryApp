@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import * as FileSystem from 'expo-file-system';
+import RNBlobUtil from 'react-native-blob-util';
 
 // Polyfill: base64 till Blob
 function base64ToBlob(base64, contentType = '', sliceSize = 512) {
@@ -121,41 +122,40 @@ export default function DiaryScreen() {
     };
 
     // Funktion för att ladda upp bilden till Supabase Storage
-    const uploadImage = async (uri) => {
-        console.log('Försöker ladda upp bild. URI:', uri);
-        const fileExt = uri.split('.').pop();
-        const fileName = `${uuidv4()}.${fileExt}`;
-        const filePath = `${user.id}/${fileName}`;
+                    // Upload-funktion med react-native-blob-util (bare workflow)
+                    async function uploadImage(uri, userId) {
+                        try {
+                            const fileExt = uri.split('.').pop();
+                            const fileName = `${userId}_${Date.now()}.${fileExt || 'jpg'}`;
+                            const filePath = `${userId}/${fileName}`;
+                            const contentType = fileExt === 'png' ? 'image/png' : 'image/jpeg';
 
-        let fileData;
-        try {
-            fileData = await FileSystem.readAsStringAsync(uri, {
-                encoding: FileSystem.EncodingType.Base64,
-            });
-        } catch (fsErr) {
-            console.log('Fel vid FileSystem.readAsStringAsync:', fsErr);
-            throw new Error('Kunde inte läsa bildfilen: ' + fsErr.message);
-        }
+                            // Läs filen som binär data
+                            const fileData = await RNBlobUtil.fs.readFile(uri.replace('file://', ''), 'base64');
+                            const blob = RNBlobUtil.base64.decode(fileData);
 
-        const contentType = fileExt === 'png' ? 'image/png' : 'image/jpeg';
+                            // Ladda upp till Supabase Storage
+                            const { data, error } = await supabase.storage
+                                .from('diary_images')
+                                .upload(filePath, blob, {
+                                    contentType,
+                                    upsert: true,
+                                });
 
-        const { error: uploadError } = await supabase.storage
-            .from('diary_images')
-            .upload(filePath, fileData, {
-                contentType,
-                cacheControl: '3600',
-                upsert: false
-            });
+                            if (error) throw error;
 
-        if (uploadError) {
-            console.log('Supabase upload error:', uploadError);
-            throw new Error(uploadError.message);
-        }
+                            // Hämta public URL
+                            const { data: publicUrlData } = supabase
+                                .storage
+                                .from('diary_images')
+                                .getPublicUrl(filePath);
 
-        const { data } = supabase.storage.from('diary_images').getPublicUrl(filePath);
-        console.log('Bild uppladdad! Public URL:', data.publicUrl);
-        return data.publicUrl;
-    };
+                            return publicUrlData.publicUrl;
+                        } catch (error) {
+                            console.error('Fel vid uppladdning:', error);
+                            return null;
+                        }
+                    }
 
     // Funktion för att spara inlägget i Supabase
     const saveEntry = async () => {
@@ -187,8 +187,9 @@ export default function DiaryScreen() {
                 throw new Error(insertError.message);
             }
 
-            // Lägg till det nya inlägget direkt i listan
+            // Logga vad som faktiskt returneras
             if (data && data[0]) {
+                console.log('Nytt inlägg från insert:', data[0]);
                 setDiaryEntries(current => [data[0], ...current]);
             }
 
@@ -257,69 +258,74 @@ export default function DiaryScreen() {
     const [editingId, setEditingId] = useState(null);
     const [editingText, setEditingText] = useState('');
 
-    const renderItem = ({ item }) => (
-        <View style={styles.entryContainer}>
-            {editingId === item.id ? (
-                <>
-                    <TextInput
-                        style={styles.textInput}
-                        value={editingText}
-                        onChangeText={setEditingText}
-                        multiline
-                    />
-                    <View style={styles.buttonRow}>
-                        <TouchableOpacity
-                            style={styles.imageButton}
-                            onPress={() => { setEditingId(null); setEditingText(''); }}
-                        >
-                            <Text style={styles.buttonText}>Avbryt</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.saveButton}
-                            onPress={async () => {
-                                await updateEntry(item.id, editingText);
-                                setEditingId(null);
-                                setEditingText('');
-                            }}
-                        >
-                            <Text style={styles.buttonText}>Spara</Text>
-                        </TouchableOpacity>
-                    </View>
-                </>
-            ) : (
-                <>
-                    <Text style={styles.entryText}>{item.text}</Text>
-                    {item.image_url && (
-                        <Image source={{ uri: item.image_url }} style={styles.entryImage} />
-                    )}
-                    <Text style={styles.timestamp}>
-                        {item.created_at ? new Date(item.created_at).toLocaleString() : 'Saving...'}
-                    </Text>
-                    <View style={styles.buttonRow}>
-                        <TouchableOpacity
-                            style={styles.imageButton}
-                            onPress={() => { setEditingId(item.id); setEditingText(item.text); }}
-                        >
-                            <Text style={styles.buttonText}>Uppdatera</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.saveButton}
-                            onPress={() => deleteEntry(item.id)}
-                        >
-                            <Text style={styles.buttonText}>Radera</Text>
-                        </TouchableOpacity>
-                    </View>
-                </>
-            )}
-        </View>
-    );
+    const renderItem = ({ item }) => {
+        console.log('Renderar dagboksinlägg:', item);
+        return (
+            <View style={styles.entryContainer}>
+                {editingId === item.id ? (
+                    <>
+                        <TextInput
+                            style={styles.textInput}
+                            value={editingText}
+                            onChangeText={setEditingText}
+                            multiline
+                        />
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity
+                                style={styles.imageButton}
+                                onPress={() => { setEditingId(null); setEditingText(''); }}
+                            >
+                                <Text style={styles.buttonText}>Avbryt</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.saveButton}
+                                onPress={async () => {
+                                    await updateEntry(item.id, editingText);
+                                    setEditingId(null);
+                                    setEditingText('');
+                                }}
+                            >
+                                <Text style={styles.buttonText}>Spara</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </>
+                ) : (
+                    <>
+                        <Text style={styles.entryText}>{item.text}</Text>
+                        {item.image_url && (
+                            <Image
+                                source={{ uri: item.image_url }}
+                                style={styles.entryImage}
+                                resizeMode="cover"
+                            />
+                        )}
+                        <Text style={styles.timestamp}>
+                            {item.created_at ? new Date(item.created_at).toLocaleString() : 'Saving...'}
+                        </Text>
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity
+                                style={styles.imageButton}
+                                onPress={() => { setEditingId(item.id); setEditingText(item.text); }}
+                            >
+                                <Text style={styles.buttonText}>Uppdatera</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.saveButton}
+                                onPress={() => deleteEntry(item.id)}
+                            >
+                                <Text style={styles.buttonText}>Radera</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </>
+                )}
+            </View>
+        );
+    };
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Min Dagbok</Text>
-            
             {loading && <ActivityIndicator size="large" color="#e0c097" />}
-
             <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.textInput}
@@ -353,18 +359,86 @@ export default function DiaryScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#1a1a2e', padding: 20 },
-    title: { fontSize: 24, fontWeight: 'bold', color: '#e0c097', marginBottom: 20, textAlign: 'center' },
-    inputContainer: { marginBottom: 20, backgroundColor: '#343a40', borderRadius: 10, padding: 15 },
-    textInput: { color: 'white', height: 100, marginBottom: 10, paddingHorizontal: 10, borderColor: 'gray', borderWidth: 1, borderRadius: 5 },
-    selectedImage: { width: '100%', height: 200, resizeMode: 'cover', borderRadius: 5, marginBottom: 10 },
-    buttonRow: { flexDirection: 'row', justifyContent: 'space-between' },
-    imageButton: { backgroundColor: '#5f6c7c', padding: 10, borderRadius: 5, flex: 1, marginRight: 5, alignItems: 'center' },
-    saveButton: { backgroundColor: '#e0c097', padding: 10, borderRadius: 5, flex: 1, marginLeft: 5, alignItems: 'center' },
-    buttonText: { color: '#1a1a2e', fontWeight: 'bold' },
-    list: { flex: 1 },
-    entryContainer: { padding: 15, backgroundColor: '#2d333b', borderRadius: 10, marginBottom: 15 },
-    entryText: { color: 'white', fontSize: 16, marginBottom: 10 },
-    entryImage: { width: '100%', height: 200, resizeMode: 'cover', borderRadius: 5, marginTop: 10 },
-    timestamp: { color: 'gray', fontSize: 12, marginTop: 5, textAlign: 'right' },
+    container: {
+        flex: 1,
+        backgroundColor: '#23243a',
+        padding: 20,
+    },
+    title: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: '#f5e3c3',
+        marginBottom: 20,
+        alignSelf: 'center',
+    },
+    inputContainer: {
+        backgroundColor: '#363b4e',
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 20,
+    },
+    textInput: {
+        backgroundColor: '#23243a',
+        color: '#f5e3c3',
+        borderRadius: 10,
+        padding: 10,
+        fontSize: 18,
+        minHeight: 80,
+        marginBottom: 10,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 10,
+    },
+    imageButton: {
+        backgroundColor: '#6c7a89',
+        padding: 10,
+        borderRadius: 10,
+        flex: 1,
+        marginRight: 10,
+        alignItems: 'center',
+    },
+    saveButton: {
+        backgroundColor: '#e0c097',
+        padding: 10,
+        borderRadius: 10,
+        flex: 1,
+        alignItems: 'center',
+    },
+    buttonText: {
+        color: '#23243a',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    entryContainer: {
+        backgroundColor: '#363b4e',
+        borderRadius: 15,
+        padding: 15,
+        marginBottom: 15,
+    },
+    entryText: {
+        color: '#f5e3c3',
+        fontSize: 18,
+    },
+    timestamp: {
+        color: '#bdbdbd',
+        fontSize: 12,
+        textAlign: 'right',
+        marginTop: 5,
+    },
+    selectedImage: {
+        width: 200,
+        height: 200,
+        borderRadius: 10,
+        marginTop: 10,
+        alignSelf: 'center',
+    },
+    entryImage: {
+        width: 200,
+        height: 200,
+        borderRadius: 10,
+        marginTop: 10,
+        alignSelf: 'center',
+    },
 });
