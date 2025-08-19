@@ -1,0 +1,7 @@
+<resources>
+    <!-- Fallback för Theme.MaterialComponents.DayNight.NoActionBar om den saknas -->
+    <style name="Theme.MaterialComponents.DayNight.NoActionBar" parent="Theme.MaterialComponents.DayNight">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+</resources>
