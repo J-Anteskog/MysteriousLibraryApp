@@ -28,7 +28,7 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anteskogen85.mysteriouslibraryapp'
+    namespace = 'com.anteskogen85.mysteriouslibraryapp'
     defaultConfig {
         applicationId 'com.anteskogen85.mysteriouslibraryapp'
         minSdkVersion rootProject.ext.minSdkVersion
@@ -47,9 +47,24 @@ android {
 }
 
 dependencies {
+
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
     implementation 'com.google.android.material:material:1.12.0'
+
+    implementation project(':react-native-blob-util')
+    implementation project(':react-native-reanimated')
+    implementation project(':react-native-gesture-handler')
+    implementation project(':react-native-screens')
+    implementation project(':react-native-safe-area-context')
+    implementation project(':react-native-webview')
+    implementation project(':@react-native-picker_picker')
+    implementation project(':react-native-localize')
+    implementation project(':react-native-get-random-values')
+    implementation project(':react-native-edge-to-edge')
+
+    // Expo modules core for autolinking
+    implementation project(':expo-modules-core')
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
