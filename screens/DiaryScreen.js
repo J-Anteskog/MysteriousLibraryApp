@@ -9,6 +9,23 @@ import { supabase } from '../supabaseClient';
 import * as ImagePicker from 'expo-image-picker';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import * as FileSystem from 'expo-file-system';
+
+// Polyfill: base64 till Blob
+function base64ToBlob(base64, contentType = '', sliceSize = 512) {
+    const byteCharacters = atob(base64);
+    const byteArrays = [];
+    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+        const slice = byteCharacters.slice(offset, offset + sliceSize);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+    }
+    return new Blob(byteArrays, { type: contentType });
+}
 
 export default function DiaryScreen() {
     const [diaryEntries, setDiaryEntries] = useState([]);
@@ -105,25 +122,38 @@ export default function DiaryScreen() {
 
     // Funktion för att ladda upp bilden till Supabase Storage
     const uploadImage = async (uri) => {
+        console.log('Försöker ladda upp bild. URI:', uri);
         const fileExt = uri.split('.').pop();
         const fileName = `${uuidv4()}.${fileExt}`;
         const filePath = `${user.id}/${fileName}`;
-        
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        
+
+        let fileData;
+        try {
+            fileData = await FileSystem.readAsStringAsync(uri, {
+                encoding: FileSystem.EncodingType.Base64,
+            });
+        } catch (fsErr) {
+            console.log('Fel vid FileSystem.readAsStringAsync:', fsErr);
+            throw new Error('Kunde inte läsa bildfilen: ' + fsErr.message);
+        }
+
+        const contentType = fileExt === 'png' ? 'image/png' : 'image/jpeg';
+
         const { error: uploadError } = await supabase.storage
             .from('diary_images')
-            .upload(filePath, blob, {
+            .upload(filePath, fileData, {
+                contentType,
                 cacheControl: '3600',
                 upsert: false
             });
 
         if (uploadError) {
+            console.log('Supabase upload error:', uploadError);
             throw new Error(uploadError.message);
         }
-        
+
         const { data } = supabase.storage.from('diary_images').getPublicUrl(filePath);
+        console.log('Bild uppladdad! Public URL:', data.publicUrl);
         return data.publicUrl;
     };
 
