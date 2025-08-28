@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "259270428279",
+    "project_id": "mysteriouslibraryapp-27a4a",
+    "storage_bucket": "mysteriouslibraryapp-27a4a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:259270428279:android:354dc6854246b4aadbe872",
+        "android_client_info": {
+          "package_name": "com.example.mysteriouslibraryapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCHf7YSqeIDEX_pCl3sTkosiJIiOvYSIg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

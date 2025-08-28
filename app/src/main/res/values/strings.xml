@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mysterious Library App</string>
+    <!-- Allmänt -->
+    <string name="meaning_title">Betydelse</string>
+    <string name="interpretation_title">Tolkning</string>
+    <string name="no_runes_found">Inga runor hittades</string>
+    <string name="search_placeholder">Sök runor...</string>
+    <string name="diary_title">Diary</string>
+    <string name="home_title">Home</string>
+    <string name="login_title">Logga in</string>
+    <string name="login_button">Logga in</string>
+    <string name="register_title">Registrera</string>
+    <string name="register_button">Registrera</string>
+    <string name="rune_detail_title">Runedetaljer</string>"
+    <string name="rune_detail_meaning">Betydelse</string>
+    <string name="rune_detail_interpretation">Tolkning</string>
+    <string name="search_hint">Sök runor...</string>"
+    <string name="tarot_detail_title">Tarotdetaljer</string>
+    <string name="tarot_detail_meaning">Betydelse</string>
+    <string name="tarot_detail_interpretation">Tolkning</string>
+    <string name="welcome_title">Välkommen</string>
+    <string name="welcome_login_button">Logga in</string>
+    <string name="welcome_register_button">Registrera</string>
+    <string name="signup_button">Registrera</string>
+    <string name="logout_button">Logga ut</string>
+
+
+
+    <!-- Profil -->
+    <string name="profile_title">Profil</string>
+    <string name="profile_logged_in_as">Inloggad som</string>
+    <string name="profile_name">Namn</string>
+    <string name="profile_age">Ålder</string>
+    <string name="profile_zodiac">Stjärntecken</string>
+    <string name="profile_favorite_category">Favoritkategori</string>
+    <string name="profile_favorite_card_or_rune">Favoritkort eller runa</string>
+    <string name="profile_save">Spara profil</string>
+    <string name="profile_saving">Sparar...</string>
+    <string name="profile_logout">Logga ut</string>
+    <string name="profile_select">Välj</string>
+    <string name="profile_tarot">Tarot</string>
+    <string name="profile_runes">Runor</string>
+    <string name="profile_oracle">Orakel</string>
+
+    <!-- Tarot -->
+    <string name="tarot_search_title">Sök Tarotkort</string>
+    <string name="search_tarot_placeholder">Sök kort...</string>
+    <string name="meaning_upright">Upright Betydelse</string>
+    <string name="meaning_reversed">Reversed Betydelse</string>
+    <string name="interpretation_upright">Upright Tolkning</string>
+    <string name="interpretation_reversed">Reversed Tolkning</string>
+    <string name="tarot_not_found">Kortet hittades inte</string>
+
+    <!-- Info-box -->
+    <string name="info_box_text">Sök genom alla runor och få deras betydelse och tolkning.</string>
+</resources>
+
